@@ -26,12 +26,13 @@ def clientThread(clientSocket, clientAddress):
             print ("Connection established with: ", clientAddress[0] + ":" + str(clientAddress[1]))
             continue
         if message != "":
-            sender, message = str(message).split("||||||!!||||||", 1)
-            print(f"{sender}: {message}")
             for client in clients:
                 if client is not clientSocket:
                     client.send((message).encode("utf-8"))
-
+            
+            sender, message = str(message).split("||||||!!||||||", 1)
+            print(f"{sender}: {message}")
+        
     clientSocket.close()
 
 hostSocket = socket(AF_INET, SOCK_STREAM)
@@ -47,8 +48,6 @@ print("Waiting for connection...")
 while True:
     clientSocket, clientAddress = hostSocket.accept()
     clientSocket.send(("SYSTEM||||||!!||||||{{{USERNAME}}}").encode("utf-8"))
-    # for client in clients:
-    #     client.send((f"SYSTEM||||||!!||||||{socket.getsockname(clientAddress[1])} just joined!").encode("utf-8"))
     pending.add(clientSocket)
     thread = Thread(target=clientThread, args=(clientSocket, clientAddress, ))
     thread.start()
