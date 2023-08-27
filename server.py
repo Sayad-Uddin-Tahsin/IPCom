@@ -6,6 +6,7 @@ import time
 
 ipcomServer_icon = "./Assets/IPCom.ico"
 about_icon = "./Assets/Info.ico"
+current_version = "1.1"
 
 root = tk.Tk()
 root.title("IPCom Server")
@@ -21,7 +22,6 @@ pending = []
 threads = []
 hostSocket = None
 
-current_version = "1.0"
 
 def about():
     about = tk.Tk()
@@ -108,7 +108,7 @@ def startSocket():
     n = tk.Label(sFrame, text=f"Server started on this moment", wraplength=400, justify="center", font=("Sogue UI", 9, "bold"), width=74)
     n.pack(anchor="w", fill=tk.BOTH)
 
-    hostIp = "127.0.0.1"
+    hostIp = gethostbyname(gethostname())
     portNumber = 0
     hostSocket.bind((hostIp, portNumber))
     hostSocket.listen()
