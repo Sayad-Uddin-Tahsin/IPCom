@@ -177,20 +177,6 @@ def take_ip():
             save_button.place(y=125)
             save_button.config(state=tk.DISABLED)
             return False
-    
-    def handle_entry_entry_event(event):
-        entry = event.widget
-        text = entry.get()
-        if ":" not in text:
-            save_button.config(state=tk.DISABLED)
-        else:
-            port = text.split(":")[1]
-            print(repr(port))
-            if port == "":
-                return
-            elif int(port) < 0 or int(port) > 65535:
-                return
-            save_button.config(state=tk.NORMAL)
 
     window = tk.Tk()
     positionRight = int(window.winfo_screenwidth()/2 - 400/2)
@@ -213,7 +199,6 @@ def take_ip():
     entry.insert(0, placeholder)
     entry.bind("<FocusIn>", handle_focus_in)
     entry.bind("<FocusOut>", handle_focus_out)
-    # entry.bind("<KeyRelease>", handle_entry_entry_event)
     entry.bind("<Return>", handle_port_entry_event)
     entry.place(x=118, y=72)
 
