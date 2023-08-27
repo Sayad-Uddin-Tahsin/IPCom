@@ -1,7 +1,6 @@
 import tkinter as tk
 from socket import *
 import threading
-import winsound
 import time
 
 ipcomServer_icon = "./Assets/IPCom.ico"
