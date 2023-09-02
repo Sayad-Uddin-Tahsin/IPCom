@@ -1,13 +1,29 @@
 import tkinter as tk
+from tkinter import ttk
 from socket import *
 import threading
 import winsound
 import time
+import json
+from urllib.request import urlopen
+import os
+
 
 ipcomServer_icon = "./Assets/IPCom.ico"
 about_icon = "./Assets/Info.ico"
-current_version = "1.1"
+with open("data.json", "r") as f:
+    current_version = json.load(f)["version"]
 
+def startUpdateCacheCleaning():
+    cached_files = [file for file in os.listdir("./")]
+    for file in cached_files:
+        if "_updateCache" in file:
+            os.remove(file)
+        elif file.split(".")[0].endswith("_"):
+            os.remove(file.replace("_", "", -1))
+            os.rename(file, file.replace("_", ""))
+
+threading.Thread(target=startUpdateCacheCleaning, daemon=True).start()
 root = tk.Tk()
 root.title("IPCom Server")
 
@@ -21,6 +37,137 @@ clients = []
 pending = []
 threads = []
 hostSocket = None
+
+def updateWin():
+    def is_newer_version(new_version):
+        current_parts = list(map(int, current_version.split('.')))
+        new_parts = list(map(int, new_version.split('.')))
+        
+        max_length = max(len(current_parts), len(new_parts))
+        
+        current_parts.extend([0] * (max_length - len(current_parts)))
+        new_parts.extend([0] * (max_length - len(new_parts)))
+        
+        for part1, part2 in zip(current_parts, new_parts):
+            if part1 > part2:
+                return False
+            elif part1 < part2:
+                return True
+        
+        return False
+
+    def get_response(url):
+        response = None
+        try:
+            response = urlopen(url)
+            data = response.read().decode("utf-8")
+            json_data = json.loads(data)
+            json_data['status'] = "ok"
+            return json_data
+        except Exception as e:
+            if response is not None:
+                retry_after_header = response.getheader("Retry-After")
+                if retry_after_header:
+                    retry_after = int(retry_after_header)
+                    return {"status": "error", "code": e.code, "msg": e.reason, "retry-after": retry_after}
+                else:
+                    return {"status": "error", "code": e.code, "msg": e.reason}
+            else:
+                return {"status": "error", "msg": str(e)}
+       
+    root = tk.Tk()
+    root.title("IPCom: Check for Update")
+    positionRight = int(root.winfo_screenwidth()/2 - 430/2)
+    positionDown = int(root.winfo_screenheight()/2 - 138/2)
+    root.geometry(f"430x138+{positionRight}+{positionDown - 50}")
+    root.resizable(0, 0)
+    root.pack_propagate(True)
+
+    def startUpdator():
+        download_button.place(x=500000, y=9999999)
+        threading.Thread(target=os.popen, args=("start \"\" \"IPCom Updater.exe\"", ), daemon=True).start()
+        root.destroy()
+        root.quit()
+    
+    msgLabel = tk.Label(root, text="Check for Update", font=('Comic Sans MS', 20, "bold"))
+    msgLabel.pack()
+
+    current_version_label = tk.Label(root, text=f"Running Version: {current_version}", font=("Segoe UI", 10))
+    current_version_label.pack(padx=10, pady=5, anchor="nw")
+
+    status_label = tk.Label(root, text="Status:", font=("Segoe UI", 10))
+    status_label.pack(padx=10, side="left", anchor="nw")
+
+    status_entry = tk.Entry(root, state="readonly", font=("consolas", 10), width=37, readonlybackground="white")
+    status_entry.pack(pady=3, side="left", anchor="nw")
+
+    status_entry.config(state="normal")
+    status_entry.insert(0, "Searching for Update...")
+    status_entry.config(state="readonly")
+    
+    download_button = ttk.Button(root, text="Download Update")
+    download_button.place(x=1000, y=1000)
+    def check_for_update():
+        url = "https://api.github.com/repos/Sayad-Uddin-Tahsin/IPCom/releases/latest"
+        response_data = get_response(url)
+        if response_data['status'] != "error":
+            is_new = is_newer_version(response_data['tag_name'])
+
+            if is_new:
+                status_entry.config(state="normal")
+                status_entry.delete(0, "end")
+                status_entry.insert(0, "Update Available!")
+                status_entry.config(state="readonly")
+                downloads_list = []
+                if len(response_data['assets']) == 1:
+                    downloads_list.append({
+                        "name": response_data["assets"][0]["name"],
+                        "url": response_data["assets"][0]["browser_download_url"]
+                    })
+                else:
+                    for asset in response_data['assets']:
+                        if "installer" in str(asset["name"]).lower():
+                            continue
+                        downloads_list.append({
+                            "name": asset["name"],
+                            "url": asset["browser_download_url"]
+                        })
+                with open("updates.json", "r") as f:
+                    Udb = json.load(f)
+                
+                Udb["status"] = "available"
+                Udb['download'] = downloads_list
+                Udb['version'] = response_data["tag_name"]
+
+                with open("updates.json", 'w') as f:
+                    json.dump(Udb, f, indent=4)
+                
+                download_button.config(command=startUpdator)
+                download_button.place(x=320, y=110)
+            else:
+                status_entry.config(state="normal")
+                status_entry.delete(0, "end")
+                status_entry.insert(0, "You are up to date!")
+                status_entry.config(state="readonly")
+        else:
+            with open("updates.json", 'r') as f:
+                Udb = json.load(f)
+            if Udb == {}:
+                status_entry.config(state="normal")
+                status_entry.delete(0, "end")
+                status_entry.insert(0, "You are up to date!")
+                status_entry.config(state="readonly")
+            else:
+                status_entry.config(state="normal")
+                status_entry.delete(0, "end")
+                status_entry.insert(0, "Cached Update Available!")
+                status_entry.config(state="readonly")
+                download_button.config(command=startUpdator)
+                download_button.place(x=320, y=110)
+
+    threading.Thread(target=check_for_update, daemon=True).start()
+    root.update_idletasks()
+    root.mainloop()
 
 
 def about():
@@ -207,6 +354,10 @@ othersMenu = tk.Menu(menu_bar, tearoff=0)
 othersMenu.add_command(
     label="About", 
     command=about
+)
+othersMenu.add_command(
+    label="Check for Update", 
+    command=updateWin
 )
 menu_bar.add_cascade(
     label="More", 
