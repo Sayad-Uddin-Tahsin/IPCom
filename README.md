@@ -19,7 +19,7 @@ graph TD;
 ```
 
 ## Installation
-Download the Latest IPCom Installer from [Releases](https://github.com/Sayad-Uddin-Tahsin/IPCom/releases).
+Download the [Latest IPCom Installer](https://github.com/Sayad-Uddin-Tahsin/IPCom/releases/latest) now from [Releases](https://github.com/Sayad-Uddin-Tahsin/IPCom/releases)!
 
 ### Installer Contains
  - IPCom
