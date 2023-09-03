@@ -26,8 +26,7 @@ def startUpdateCacheCleaning():
 
 threading.Thread(target=startUpdateCacheCleaning, daemon=True).start()
 
-def updateWin():
-    def is_newer_version(new_version):
+def is_newer_version(new_version):
         current_parts = list(map(int, current_version.split('.')))
         new_parts = list(map(int, new_version.split('.')))
         
@@ -44,25 +43,61 @@ def updateWin():
         
         return False
 
-    def get_response(url):
-        response = None
-        try:
-            response = urlopen(url)
-            data = response.read().decode("utf-8")
-            json_data = json.loads(data)
-            json_data['status'] = "ok"
-            return json_data
-        except Exception as e:
-            if response is not None:
-                retry_after_header = response.getheader("Retry-After")
-                if retry_after_header:
-                    retry_after = int(retry_after_header)
-                    return {"status": "error", "code": e.code, "msg": e.reason, "retry-after": retry_after}
-                else:
-                    return {"status": "error", "code": e.code, "msg": e.reason}
+def get_response(url):
+    response = None
+    try:
+        response = urlopen(url)
+        data = response.read().decode("utf-8")
+        json_data = json.loads(data)
+        json_data['status'] = "ok"
+        return json_data
+    except Exception as e:
+        if response is not None:
+            retry_after_header = response.getheader("Retry-After")
+            if retry_after_header:
+                retry_after = int(retry_after_header)
+                return {"status": "error", "code": e.code, "msg": e.reason, "retry-after": retry_after}
             else:
-                return {"status": "error", "msg": str(e)}
-       
+                return {"status": "error", "code": e.code, "msg": e.reason}
+        else:
+            return {"status": "error", "msg": str(e)}
+
+def startupCheckForUpdate():
+    url = "https://api.github.com/repos/Sayad-Uddin-Tahsin/IPCom/releases/latest"
+    response_data = get_response(url)
+    if response_data['status'] != "error":
+        is_new = is_newer_version(response_data['tag_name'])
+        if is_new:
+            downloads_list = []
+            if len(response_data['assets']) == 1:
+                downloads_list.append({
+                    "name": response_data["assets"][0]["name"],
+                    "url": response_data["assets"][0]["browser_download_url"]
+                })
+            else:
+                for asset in response_data['assets']:
+                    if "installer" in str(asset["name"]).lower():
+                        continue
+                    downloads_list.append({
+                        "name": asset["name"],
+                        "url": asset["browser_download_url"]
+                    })
+            with open("updates.json", "r") as f:
+                Udb = json.load(f)
+            
+            Udb["status"] = "available"
+            Udb['download'] = downloads_list
+            Udb['version'] = response_data["tag_name"]
+
+            with open("updates.json", 'w') as f:
+                json.dump(Udb, f, indent=4)
+            
+            if messagebox.askyesno("New Update Available!", "A New Update is Available! Do you want to Update IPCom now?"):
+                threading.Thread(target=os.popen, args=("start \"\" \"IPCom Updater.exe\"", ), daemon=True).start()
+  
+threading.Thread(target=startupCheckForUpdate, daemon=True).start()
+
+def updateWin():
     root = tk.Tk()
     root.title("IPCom: Check for Update")
     positionRight = int(root.winfo_screenwidth()/2 - 430/2)
