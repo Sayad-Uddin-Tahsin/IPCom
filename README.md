@@ -26,6 +26,8 @@ Download the [Latest IPCom Installer](https://github.com/Sayad-Uddin-Tahsin/IPCo
    - Let you connect to a server and chat
  - IPCom Server
    - Let you create a new server
+ - IPCom Updater
+   - Let you update IPCom to latest version
 
 ## License
 This project is licensed under the [MIT License](./LICENSE).
