@@ -88,7 +88,7 @@ def updateWin():
             total_size = int(response.headers.get('content-length', 0))
             downloaded_size = 0
             fName, fExtension = str(download['name']).split('.', -1)[0], str(download['name']).split('.', -1)[1]
-            fName.replace("-", " ")
+            fName = fName.replace("-", " ")
             with open(f"{fName}_updateCache.{fExtension}", "wb") as file:
                 while True:
                     if download_thread_killed == True:
