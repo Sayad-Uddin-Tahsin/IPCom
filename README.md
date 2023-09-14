@@ -1,4 +1,4 @@
-# <img src="./Assets/IPCom.ico" alt="IPCom" height=30 width=30></img> IPCom
+# <img src="./Assets/IPCom.ico" alt="IPCom" height=40 width=40></img> IPCom
 IPCom is an offline messaging application that allows users to send messages without an internet connection. It uses IP to send messages between devices. This makes it ideal for situations where there is no internet connection available but you still need to communicate with others. The matter is to have on same Network!
 
 ## How it works?
